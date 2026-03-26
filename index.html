@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Master Importados - Pro Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --gold: #D4AF37;
+            --gold-dark: #AA8A2E;
+            --dark-pure: #000000;
+            --dark-card: #0a0a0a;
+            --emerald: #10b981;
+            --rose: #f43f5e;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark-pure);
+            color: #ffffff;
+            margin: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Menu Lateral */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+        }
+
+        .sidebar-closed { transform: translateX(-100%); }
+        .sidebar-open { transform: translateX(0); }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 900;
+        }
+
+        #overlay.active { display: block; }
+
+        .sidebar-item {
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            margin-bottom: 4px;
+            border-radius: 12px;
+            color: #71717a;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: #000;
+            font-weight: 700;
+        }
+
+        /* Estilização Geral */
+        .master-card {
+            background: var(--dark-card);
+            border: 1px solid #1a1a1a;
+            border-radius: 16px;
+        }
+
+        .master-input {
+            background: #111;
+            border: 1px solid #222;
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            width: 100%;
+            outline: none;
+            font-size: 16px;
+        }
+
+        .btn-action {
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: black; }
+        .btn-emerald { background: var(--emerald); color: white; }
+        .btn-rose { background: var(--rose); color: white; }
+
+        .content-section {
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .content-section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 16px;
+        }
+
+        /* Modais */
+        .modal-container {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-container.active { display: flex; }
+    </style>
+</head>
+<body class="flex min-h-screen overflow-x-hidden">
+
+    <div id="overlay" onclick="toggleMenu()"></div>
+
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-black border-r border-zinc-900 p-6 flex flex-col sidebar-closed lg:relative lg:sidebar-open lg:transform-none">
+        <div class="mb-10 text-center">
+            <img src="https://herodotosouza.github.io/M-sterImportados/image.png" alt="Logo Master Importados" class="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-[#D4AF37] object-cover shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+            <h2 class="text-[12px] font-bold tracking-[0.2em] text-[#D4AF37] uppercase">Master Importados</h2>
+            <p class="text-[8px] text-zinc-600 tracking-widest mt-1">PREMIUM CONTROL</p>
+        </div>
+
+        <nav class="flex-1 space-y-1 overflow-y-auto">
+            <div onclick="navigateTo('dashboard')" class="sidebar-item active" id="nav-dashboard">
+                <i class="fas fa-th-large w-5"></i> Dashboard
+            </div>
+            <div onclick="navigateTo('products')" class="sidebar-item" id="nav-products">
+                <i class="fas fa-box-open w-5"></i> Meus Produtos
+            </div>
+            <div onclick="navigateTo('categories')" class="sidebar-item" id="nav-categories">
+                <i class="fas fa-tags w-5"></i> Categorias
+            </div>
+            <div onclick="navigateTo('register')" class="sidebar-item" id="nav-register">
+                <i class="fas fa-plus-circle w-5"></i> Novo Produto
+            </div>
+            <div onclick="navigateTo('entry')" class="sidebar-item" id="nav-entry">
+                <i class="fas fa-arrow-down w-5 text-emerald-500"></i> Entradas
+            </div>
+            <div onclick="navigateTo('exit')" class="sidebar-item" id="nav-exit">
+                <i class="fas fa-shopping-cart w-5 text-rose-500"></i> Vendas
+            </div>
+            <div onclick="navigateTo('history')" class="sidebar-item" id="nav-history">
+                <i class="fas fa-history w-5"></i> Histórico
+            </div>
+        </nav>
+
+        <div class="mt-auto pt-6 border-t border-zinc-900">
+            <button onclick="exportData()" class="w-full py-3 rounded-xl bg-zinc-900 text-zinc-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all">
+                <i class="fas fa-cloud-download-alt mr-2"></i> Exportar Backup
+            </button>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+        <header class="h-16 flex items-center justify-between px-6 lg:hidden fixed top-0 left-0 right-0 z-[800] bg-black border-b border-zinc-900">
+            <button onclick="toggleMenu()" class="text-xl text-zinc-400 p-2">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span class="text-[#D4AF37] font-bold tracking-tighter text-lg">MASTER</span>
+            <div class="w-10"></div>
+        </header>
+
+        <main class="flex-1 p-4 lg:p-10 pt-20 lg:pt-10 overflow-y-auto">
+            
+            <section id="section-dashboard" class="content-section active">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div class="master-card p-5 border-l-4 border-blue-500">
+                        <p class="text-zinc-500 text-[10px] uppercase font-bold mb-1">Custo Estoque</p>
+                        <h3 class="text-xl font-bold" id="stat-cost">R$ 0</h3>
+                    </div>
+                    <div class="master-card p-5 border-l-4 border-amber-500">
+                        <p class="text-zinc-500 text-[10px] uppercase font-bold mb-1">Faturamento</p>
+                        <h3 class="text-xl font-bold text-amber-500" id="stat-revenue">R$ 0</h3>
+                    </div>
+                    <div class="master-card p-5 border-l-4 border-emerald-500">
+                        <p class="text-zinc-500 text-[10px] uppercase font-bold mb-1">Lucro</p>
+                        <h3 class="text-xl font-bold text-emerald-400" id="stat-profit">R$ 0</h3>
+                    </div>
+                    <div class="master-card p-5 border-l-4 border-rose-500">
+                        <p class="text-zinc-500 text-[10px] uppercase font-bold mb-1">Stock Alerta</p>
+                        <h3 class="text-xl font-bold text-rose-500" id="stat-low">0</h3>
+                    </div>
+                </div>
+
+                <h2 class="text-sm font-bold mb-4 uppercase text-zinc-500 tracking-widest">Resumo de Estoque</h2>
+                <div class="master-card overflow-hidden">
+                    <div class="table-container">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-zinc-900/50 text-[10px] text-zinc-500 uppercase font-bold">
+                                <tr>
+                                    <th class="p-4">Item</th>
+                                    <th class="p-4">Qtd</th>
+                                    <th class="p-4">Vendas</th>
+                                    <th class="p-4">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-tbody" class="text-sm divide-y divide-zinc-900"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-products" class="content-section">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-xl font-bold">Meus Produtos</h1>
+                    <button onclick="navigateTo('register')" class="bg-zinc-900 px-4 py-2 rounded-lg text-[10px] font-bold uppercase text-[#D4AF37] border border-zinc-800">
+                        <i class="fas fa-plus mr-2"></i> Novo
+                    </button>
+                </div>
+                <div id="products-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    </div>
+            </section>
+
+            <section id="section-categories" class="content-section">
+                <div class="max-w-md mx-auto space-y-6">
+                    <h1 class="text-xl font-bold">Gestão de Categorias</h1>
+                    <div class="master-card p-6">
+                        <input type="text" id="cat-input" class="master-input mb-4" placeholder="Nome da Categoria">
+                        <button onclick="addCategory()" class="btn-action btn-gold">Criar Categoria</button>
+                    </div>
+                    <div id="cat-list-container" class="space-y-3"></div>
+                </div>
+            </section>
+
+            <section id="section-register" class="content-section">
+                <div class="max-w-md mx-auto space-y-6">
+                    <h1 class="text-xl font-bold text-center">Cadastro de Aparelho</h1>
+                    <div class="master-card p-6 space-y-4">
+                        <input type="text" id="p-name" placeholder="Modelo / Descrição" class="master-input">
+                        <select id="p-cat" class="master-input"></select>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="number" id="p-cost" placeholder="Custo R$" class="master-input">
+                            <input type="number" id="p-price" placeholder="Venda R$" class="master-input">
+                        </div>
+                        <input type="number" id="p-qty" placeholder="Estoque Inicial" class="master-input">
+                        <button onclick="registerProduct()" class="btn-action btn-gold">Confirmar Cadastro</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-entry" class="content-section">
+                <div class="max-w-md mx-auto space-y-6">
+                    <h1 class="text-xl font-bold text-emerald-500">Reposição de Estoque</h1>
+                    <div class="master-card p-6 border-t-4 border-emerald-500 space-y-4">
+                        <select id="entry-prod" class="master-input"></select>
+                        <input type="number" id="entry-qty" placeholder="Qtd de Entrada" class="master-input">
+                        <button onclick="processMovement('in')" class="btn-action btn-emerald">Lançar Entrada</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-exit" class="content-section">
+                <div class="max-w-md mx-auto space-y-6">
+                    <h1 class="text-xl font-bold text-rose-500">Baixa de Venda</h1>
+                    <div class="master-card p-6 border-t-4 border-rose-500 space-y-4">
+                        <select id="exit-prod" class="master-input"></select>
+                        <input type="number" id="exit-qty" placeholder="Qtd Vendida" class="master-input">
+                        <button onclick="processMovement('out')" class="btn-action btn-rose">Registrar Saída</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-history" class="content-section">
+                <h1 class="text-xl font-bold mb-6">Histórico de Atividade</h1>
+                <div id="history-container" class="space-y-3 max-w-lg mx-auto lg:mx-0"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="edit-prod-modal" class="modal-container">
+        <div class="master-card p-6 w-full max-w-sm space-y-4 border border-zinc-800 shadow-2xl">
+            <h2 class="text-lg font-bold flex items-center gap-2">
+                <i class="fas fa-pencil-alt text-[#D4AF37]"></i> Editar Produto
+            </h2>
+            <div class="space-y-3">
+                <label class="text-[10px] font-bold text-zinc-500 uppercase">Nome do Produto</label>
+                <input type="text" id="edit-p-name" class="master-input">
+                
+                <label class="text-[10px] font-bold text-zinc-500 uppercase">Categoria</label>
+                <select id="edit-p-cat" class="master-input"></select>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-zinc-500 uppercase">Custo (R$)</label>
+                        <input type="number" id="edit-p-cost" class="master-input">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-zinc-500 uppercase">Venda (R$)</label>
+                        <input type="number" id="edit-p-price" class="master-input">
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 pt-4">
+                <button onclick="saveProductEdit()" class="btn-action btn-gold">Salvar Alterações</button>
+                <button onclick="deleteProduct()" class="p-3 text-rose-500 font-bold text-[10px] uppercase tracking-widest">Excluir Permanente</button>
+                <button onclick="closeEditProdModal()" class="p-3 text-zinc-500 font-bold text-[10px] uppercase">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-cat-modal" class="modal-container">
+        <div class="master-card p-6 w-full max-w-sm space-y-4 border border-zinc-800">
+            <h2 class="text-lg font-bold">Editar Categoria</h2>
+            <input type="text" id="edit-cat-input" class="master-input" placeholder="Novo nome">
+            <div class="flex gap-2">
+                <button onclick="closeEditCatModal()" class="flex-1 bg-zinc-900 p-4 rounded-xl font-bold uppercase text-[10px]">Cancelar</button>
+                <button onclick="saveCategoryEdit()" class="flex-1 btn-action btn-gold">Gravar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:right-6 lg:translate-x-0 w-[90%] lg:w-72 bg-white text-black p-4 rounded-xl shadow-2xl transition-all duration-300 opacity-0 translate-y-10 z-[3000] border-l-8 border-[#D4AF37]">
+        <p id="toast-msg" class="font-bold text-[11px] text-center"></p>
+    </div>
+
+    <script>
+        // Banco de Dados Local
+        let state = JSON.parse(localStorage.getItem('master_pro_v5')) || {
+            categories: ['iPhones', 'Watches', 'Acessórios'],
+            products: [],
+            history: [],
+            totalSalesVolume: 0,
+            totalSalesProfit: 0
+        };
+
+        let activeCatIdx = null;
+        let activeProdId = null;
+
+        function save() { localStorage.setItem('master_pro_v5', JSON.stringify(state)); }
+
+        // Navegação
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('sidebar-closed');
+            document.getElementById('sidebar').classList.toggle('sidebar-open');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function navigateTo(id) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+            
+            document.getElementById(`section-${id}`).classList.add('active');
+            document.getElementById(`nav-${id}`).classList.add('active');
+            
+            if (window.innerWidth < 1024) {
+                if (document.getElementById('sidebar').classList.contains('sidebar-open')) toggleMenu();
+            }
+            render();
+        }
+
+        // Gestão de Categorias
+        function addCategory() {
+            const val = document.getElementById('cat-input').value.trim();
+            if(!val || state.categories.includes(val)) return;
+            state.categories.push(val);
+            document.getElementById('cat-input').value = '';
+            save(); render(); notify("Categoria criada!");
+        }
+
+        function openEditCatModal(index) {
+            activeCatIdx = index;
+            document.getElementById('edit-cat-input').value = state.categories[index];
+            document.getElementById('edit-cat-modal').classList.add('active');
+        }
+
+        function closeEditCatModal() { document.getElementById('edit-cat-modal').classList.remove('active'); }
+
+        function saveCategoryEdit() {
+            const newName = document.getElementById('edit-cat-input').value.trim();
+            const oldName = state.categories[activeCatIdx];
+            if(!newName || newName === oldName) return closeEditCatModal();
+            state.products.forEach(p => { if(p.category === oldName) p.category = newName; });
+            state.categories[activeCatIdx] = newName;
+            save(); closeEditCatModal(); render(); notify("Categoria atualizada!");
+        }
+
+        // Gestão de Produtos
+        function registerProduct() {
+            const name = document.getElementById('p-name').value;
+            const cat = document.getElementById('p-cat').value;
+            const cost = parseFloat(document.getElementById('p-cost').value);
+            const price = parseFloat(document.getElementById('p-price').value);
+            const qty = parseInt(document.getElementById('p-qty').value) || 0;
+
+            if(!name || isNaN(cost) || isNaN(price)) return notify("⚠️ Preencha os campos!");
+
+            state.products.push({ id: Date.now(), name, category: cat, cost, price, qty, soldQty: 0, totalRevenue: 0, totalProfit: 0 });
+            if(qty > 0) addLog("Estoque Inicial", name, qty, "in");
+            save(); render(); notify("✅ Produto Registrado!");
+            ['p-name', 'p-cost', 'p-price', 'p-qty'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        function openEditProdModal(id) {
+            activeProdId = id;
+            const p = state.products.find(x => x.id === id);
+            document.getElementById('edit-p-name').value = p.name;
+            document.getElementById('edit-p-cost').value = p.cost;
+            document.getElementById('edit-p-price').value = p.price;
+            document.getElementById('edit-p-cat').innerHTML = state.categories.map(c => `<option value="${c}" ${c === p.category ? 'selected' : ''}>${c}</option>`).join('');
+            document.getElementById('edit-prod-modal').classList.add('active');
+        }
+
+        function closeEditProdModal() { document.getElementById('edit-prod-modal').classList.remove('active'); }
+
+        function saveProductEdit() {
+            const p = state.products.find(x => x.id === activeProdId);
+            p.name = document.getElementById('edit-p-name').value;
+            p.cost = parseFloat(document.getElementById('edit-p-cost').value);
+            p.price = parseFloat(document.getElementById('edit-p-price').value);
+            p.category = document.getElementById('edit-p-cat').value;
+            save(); closeEditProdModal(); render(); notify("✅ Produto atualizado!");
+        }
+
+        function deleteProduct() {
+            if(!confirm("Deseja realmente apagar este produto do sistema?")) return;
+            state.products = state.products.filter(x => x.id !== activeProdId);
+            save(); closeEditProdModal(); render(); notify("🗑️ Produto excluído!");
+        }
+
+        // Movimentações
+        function processMovement(type) {
+            const id = parseInt(document.getElementById(`${type === 'in' ? 'entry' : 'exit'}-prod`).value);
+            const qty = parseInt(document.getElementById(`${type === 'in' ? 'entry' : 'exit'}-qty`).value);
+            const p = state.products.find(x => x.id === id);
+            
+            if(!p || isNaN(qty) || qty <= 0) return;
+            if(type === 'out' && p.qty < qty) return notify("❌ Sem estoque disponível!");
+
+            if(type === 'in') {
+                p.qty += qty;
+                addLog("Entrada", p.name, qty, "in");
+            } else {
+                p.qty -= qty;
+                p.soldQty += qty;
+                p.totalRevenue += (qty * p.price);
+                p.totalProfit += (qty * (p.price - p.cost));
+                state.totalSalesVolume += (qty * p.price);
+                state.totalSalesProfit += (qty * (p.price - p.cost));
+                addLog("Venda", p.name, qty, "out");
+            }
+            save(); render(); notify("✅ Lançamento realizado!");
+            document.getElementById(`${type === 'in' ? 'entry' : 'exit'}-qty`).value = '';
+        }
+
+        function addLog(action, product, qty, type) {
+            state.history.unshift({ ts: new Date().toLocaleString('pt-BR'), action, product, qty, type });
+        }
+
+        // Renderização Geral
+        function render() {
+            let stockCost = 0, low = 0;
+            state.products.forEach(p => { stockCost += (p.cost * p.qty); if(p.qty <= 2) low++; });
+
+            document.getElementById('stat-cost').innerText = "R$ " + Math.floor(stockCost).toLocaleString();
+            document.getElementById('stat-revenue').innerText = "R$ " + Math.floor(state.totalSalesVolume).toLocaleString();
+            document.getElementById('stat-profit').innerText = "R$ " + Math.floor(state.totalSalesProfit).toLocaleString();
+            document.getElementById('stat-low').innerText = low;
+
+            // Dashboard Table
+            document.getElementById('dash-tbody').innerHTML = state.products.map(p => `
+                <tr class="hover:bg-zinc-900/30">
+                    <td class="p-4">
+                        <div class="font-bold text-white text-[11px]">${p.name}</div>
+                        <div class="text-[7px] text-zinc-600 uppercase font-black tracking-widest">${p.category}</div>
+                    </td>
+                    <td class="p-4 font-bold ${p.qty <= 2 ? 'text-rose-500' : 'text-zinc-400'}">${p.qty}</td>
+                    <td class="p-4 text-zinc-500 font-bold">${p.soldQty}</td>
+                    <td class="p-4">
+                        <button onclick="openEditProdModal(${p.id})" class="text-zinc-700 hover:text-[#D4AF37]"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>`).join('');
+
+            // Gestão de Produtos (Section Meus Produtos)
+            document.getElementById('products-list-container').innerHTML = state.products.map(p => `
+                <div class="master-card p-5 space-y-3 relative group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[8px] bg-zinc-900 px-2 py-1 rounded text-zinc-500 uppercase font-bold mb-2 inline-block">${p.category}</span>
+                            <h4 class="font-bold text-sm text-white">${p.name}</h4>
+                        </div>
+                        <button onclick="openEditProdModal(${p.id})" class="text-zinc-700 hover:text-[#D4AF37] p-2"><i class="fas fa-cog"></i></button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-zinc-900/50">
+                        <div>
+                            <p class="text-[8px] text-zinc-500 uppercase font-bold">Estoque</p>
+                            <p class="text-sm font-bold ${p.qty <= 2 ? 'text-rose-500' : 'text-white'}">${p.qty} un</p>
+                        </div>
+                        <div>
+                            <p class="text-[8px] text-zinc-500 uppercase font-bold">Venda</p>
+                            <p class="text-sm font-bold text-emerald-500">R$ ${p.price.toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>`).join('');
+
+            // Categorias
+            document.getElementById('cat-list-container').innerHTML = state.categories.map((c, i) => `
+                <div class="master-card p-4 flex justify-between items-center">
+                    <span class="text-xs font-bold uppercase tracking-widest">${c}</span>
+                    <button onclick="openEditCatModal(${i})" class="text-zinc-700 hover:text-[#D4AF37] p-2"><i class="fas fa-edit"></i></button>
+                </div>`).join('');
+
+            // Selects
+            document.getElementById('p-cat').innerHTML = state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            const opts = '<option value="">Selecionar...</option>' + state.products.map(p => `<option value="${p.id}">${p.name} (${p.qty})</option>`).join('');
+            document.getElementById('entry-prod').innerHTML = opts;
+            document.getElementById('exit-prod').innerHTML = opts;
+
+            // Histórico
+            document.getElementById('history-container').innerHTML = state.history.slice(0, 15).map(h => `
+                <div class="master-card p-4 flex justify-between border-l-4 ${h.type === 'in' ? 'border-emerald-500' : 'border-rose-500'}">
+                    <div><p class="text-[11px] font-bold">${h.product}</p><p class="text-[7px] uppercase text-zinc-600 font-black">${h.action} • ${h.ts}</p></div>
+                    <span class="font-bold ${h.type === 'in' ? 'text-emerald-500' : 'text-rose-500'}">${h.type === 'in' ? '+' : '-'}${h.qty}</span>
+                </div>`).join('');
+        }
+
+        function exportData() {
+            const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+            const a = document.createElement('a'); a.href = data; a.download = "master_import_backup.json"; a.click();
+        }
+
+        function notify(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            t.classList.replace('opacity-0', 'opacity-100'); t.classList.replace('translate-y-10', 'translate-y-0');
+            setTimeout(() => { t.classList.replace('opacity-100', 'opacity-0'); t.classList.replace('translate-y-0', 'translate-y-10'); }, 2500);
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>
+
+
